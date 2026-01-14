@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Kutub Accounts</title>
+<style>
+body {
+  margin: 0;
+  background: #0f0f0f;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+.card {
+  background: #1c1c1c;
+  padding: 20px;
+  border-radius: 10px;
+  width: 320px;
+}
+h2 {
+  margin-top: 0;
+}
+input, button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+}
+input {
+  background: #111;
+  border: 1px solid #333;
+  color: white;
+}
+button {
+  background: #ff0033;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+.small {
+  color: #aaa;
+  font-size: 13px;
+  margin-top: 10px;
+}
+.hidden {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div id="loading">
+    Проверка аккаунта…
+  </div>
+
+  <div id="signup" class="hidden">
+    <h2>Создать аккаунт</h2>
+    <input id="su_user" placeholder="Имя пользователя">
+    <input id="su_pass" type="password" placeholder="Пароль">
+    <button onclick="signup()">Создать</button>
+  </div>
+
+  <div id="login" class="hidden">
+    <h2>Вход в Kutub</h2>
+    <div class="small">
+      Аккаунт: <b id="loginUser"></b>
+    </div>
+    <p class="small">Вы доверяете сервису Kutub?</p>
+    <button onclick="login()">Да</button>
+  </div>
+</div>
+
+<script>
+const API = "https://kutub-accounts.YOUR_WORKER_URL.workers.dev";
+const redirect = new URLSearchParams(location.search).get("redirect");
+
+const saved = JSON.parse(localStorage.getItem("kutubAccount"));
+
+const loading = document.getElementById("loading");
+const signupBox = document.getElementById("signup");
+const loginBox = document.getElementById("login");
+
+setTimeout(() => {
+  loading.style.display = "none";
+
+  if (!saved) {
+    signupBox.classList.remove("hidden");
+  } else {
+    document.getElementById("loginUser").innerText = saved.username;
+    loginBox.classList.remove("hidden");
+  }
+}, 500);
+
+function signup() {
+  const username = su_user.value.trim();
+  const password = su_pass.value.trim();
+  if (!username || !password) return;
+
+  fetch(API + "/signup", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username, password })
+  }).then(r => {
+    if (!r.ok) return;
+    localStorage.setItem(
+      "kutubAccount",
+      JSON.stringify({ username, password })
+    );
+    location.reload();
+  });
+}
+
+function login() {
+  fetch(API + "/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(saved)
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.token) return;
+    location.href = redirect + "?token=" + d.token;
+  });
+}
+</script>
+
+</body>
+</html>
